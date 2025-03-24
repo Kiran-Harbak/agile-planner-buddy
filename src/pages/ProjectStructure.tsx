@@ -2,17 +2,29 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useProjectPlanner, Methodology } from '@/hooks/useProjectPlanner';
 import ProjectStructureCard from '@/components/ProjectStructureCard';
 import MethodologyCard from '@/components/MethodologyCard';
-import { ArrowLeft, Download, Share2 } from 'lucide-react';
+import { ArrowLeft, Download, Share2, CheckSquare, Trash2, AlignLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { useIntersectionAnimation, useSlideUp } from '@/lib/animations';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const ProjectStructure = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { projects, generateProjectStructure, generateMethodologyRecommendations } = useProjectPlanner();
+  const { projects, generateProjectStructure, generateMethodologyRecommendations, toggleProjectCompletion, deleteProject } = useProjectPlanner();
   const [selectedMethodology, setSelectedMethodology] = useState<string | null>(null);
   
   const project = projects.find(p => p.id === id);
@@ -51,12 +63,25 @@ const ProjectStructure = () => {
     toast.success('Project URL copied to clipboard!');
   };
   
+  const handleToggleCompletion = () => {
+    if (id) {
+      toggleProjectCompletion(id);
+    }
+  };
+  
+  const handleDeleteProject = () => {
+    if (id) {
+      deleteProject(id);
+      navigate('/dashboard');
+    }
+  };
+  
   if (!project) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Project Not Found</h1>
-          <Button onClick={() => navigate('/')}>Return Home</Button>
+          <Button onClick={() => navigate('/dashboard')}>Return to Dashboard</Button>
         </div>
       </div>
     );
@@ -68,20 +93,49 @@ const ProjectStructure = () => {
         <div {...headerAnimation} className="mb-10">
           <Button 
             variant="ghost" 
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/dashboard')}
             className="mb-4 focus-ring"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Home
+            Back to Dashboard
           </Button>
           
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
             <div>
-              <h1 className="text-3xl font-bold mb-2">{project.name}</h1>
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-3xl font-bold">{project.name}</h1>
+                {project.completed && (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    Completed
+                  </span>
+                )}
+              </div>
               <p className="text-gray-600 max-w-2xl">{project.description}</p>
+              
+              <div className="mt-4 flex flex-wrap gap-3">
+                <div className="flex items-center text-sm text-gray-600">
+                  <AlignLeft className="h-4 w-4 mr-1" />
+                  <span>{project.objectives.length} Objectives</span>
+                </div>
+                <div className="flex items-center text-sm text-gray-600">
+                  <span>Timeline: {project.timeline}</span>
+                </div>
+                <div className="flex items-center text-sm text-gray-600">
+                  <span>Team size: {project.teamSize}</span>
+                </div>
+              </div>
             </div>
             
-            <div className="flex space-x-3">
+            <div className="flex flex-wrap gap-2">
+              <Button 
+                variant="outline" 
+                onClick={handleToggleCompletion}
+                className="focus-ring"
+              >
+                <CheckSquare className="mr-2 h-4 w-4" />
+                Mark as {project.completed ? 'Active' : 'Completed'}
+              </Button>
+              
               <Button 
                 variant="outline" 
                 onClick={handleShare}
@@ -98,6 +152,30 @@ const ProjectStructure = () => {
                 <Download className="mr-2 h-4 w-4" />
                 Download Plan
               </Button>
+              
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" className="text-destructive focus-ring">
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will permanently delete the project "{project.name}" and all associated data.
+                      This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDeleteProject} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
         </div>

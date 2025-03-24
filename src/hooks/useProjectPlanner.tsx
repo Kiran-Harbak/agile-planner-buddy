@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -13,6 +12,7 @@ export type ProjectDetails = {
   timeline: string;
   currentQuestion: number;
   completed: boolean;
+  createdAt: Date;
 };
 
 export type TeamMember = {
@@ -113,11 +113,37 @@ export function useProjectPlanner() {
       timeline: projectData.timeline || '',
       currentQuestion: 0,
       completed: false,
+      createdAt: new Date(),
     };
     
     setProjects([...projects, newProject]);
     toast.success('Project created successfully!');
     return newProject;
+  };
+  
+  // Update project completion status
+  const toggleProjectCompletion = (projectId: string) => {
+    setProjects(prev => 
+      prev.map(project => 
+        project.id === projectId 
+          ? { ...project, completed: !project.completed }
+          : project
+      )
+    );
+    
+    const project = projects.find(p => p.id === projectId);
+    if (project) {
+      const message = !project.completed
+        ? 'Project marked as completed!'
+        : 'Project marked as active!';
+      toast.success(message);
+    }
+  };
+  
+  // Delete a project
+  const deleteProject = (projectId: string) => {
+    setProjects(prev => prev.filter(project => project.id !== projectId));
+    toast.success('Project deleted successfully!');
   };
 
   // Generate project structure based on project details
@@ -398,6 +424,8 @@ export function useProjectPlanner() {
   return {
     projects,
     createProject,
+    toggleProjectCompletion,
+    deleteProject,
     generateProjectStructure,
     generateMethodologyRecommendations,
   };
