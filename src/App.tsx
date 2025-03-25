@@ -41,11 +41,11 @@ const App = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <div className="min-h-screen bg-background">
+      <BrowserRouter>
+        <div className="min-h-screen bg-background">
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
             <Header />
             <main className="pt-20 pb-16 mx-auto">
               <Routes>
@@ -56,9 +56,9 @@ const App = () => {
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </main>
-          </div>
-        </BrowserRouter>
-      </TooltipProvider>
+          </TooltipProvider>
+        </div>
+      </BrowserRouter>
     </QueryClientProvider>
   );
 };
