@@ -1,7 +1,15 @@
-
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Brain, Check, CheckCircle2, Clock } from 'lucide-react';
+import { 
+  ArrowRight, 
+  Brain, 
+  Check, 
+  CheckCircle2, 
+  Clock, 
+  Download, 
+  FileDown, 
+  Play 
+} from 'lucide-react';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { 
   Carousel,
@@ -14,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import ProjectStructureCard from '@/components/ProjectStructureCard';
 import { WorkItem, Methodology } from '@/hooks/useProjectPlanner';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 
 const demoProjects = [
   {
@@ -273,6 +282,40 @@ const demoMethodologies: {[key: string]: Methodology[]} = {
   ]
 };
 
+const integrations = [
+  {
+    name: "Jira",
+    logo: "https://cdn.worldvectorlogo.com/logos/jira-1.svg",
+    description: "Export your project structure directly to Jira issues and epics."
+  },
+  {
+    name: "Zymmr",
+    logo: "https://zymmr.vercel.app/favicon.ico", 
+    description: "Seamlessly integrate with Zymmr for enhanced project management."
+  },
+  {
+    name: "Asana",
+    logo: "https://cdn.worldvectorlogo.com/logos/asana-logo.svg",
+    description: "Connect with Asana to organize your work across teams."
+  },
+  {
+    name: "Trello",
+    logo: "https://cdn.worldvectorlogo.com/logos/trello.svg",
+    description: "Sync your project boards with Trello for visual task management."
+  },
+  {
+    name: "Monday.com",
+    logo: "https://cdn.worldvectorlogo.com/logos/monday-1.svg",
+    description: "Import your project structure to Monday.com workflows."
+  }
+];
+
+const exportFormats = [
+  { name: "CSV", icon: <FileDown className="h-4 w-4" />, description: "Export as CSV for spreadsheet applications" },
+  { name: "Excel", icon: <FileDown className="h-4 w-4" />, description: "Export as Excel workbook" },
+  { name: "JSON", icon: <FileDown className="h-4 w-4" />, description: "Export as JSON for developers" },
+];
+
 type AnimatedStep = {
   title: string;
   description: string;
@@ -285,6 +328,8 @@ const ProjectShowcase = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [showStructure, setShowStructure] = useState(false);
   const [showMethodology, setShowMethodology] = useState(false);
+  const [showExports, setShowExports] = useState(false);
+  const [isDemoRunning, setIsDemoRunning] = useState(false);
   
   const project = demoProjects.find(p => p.name === selectedProject);
   const structure = demoStructures[selectedProject];
@@ -317,20 +362,44 @@ const ProjectShowcase = () => {
     }
   ];
   
-  // Auto-advance through steps for demo
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (currentStep < steps.length - 1) {
-        setCurrentStep(prevStep => prevStep + 1);
-      } else if (currentStep === steps.length - 1 && !showStructure) {
-        setShowStructure(true);
-      } else if (showStructure && !showMethodology) {
-        setShowMethodology(true);
-      }
-    }, 3000);
-    
-    return () => clearTimeout(timer);
-  }, [currentStep, showStructure, showMethodology]);
+  const advanceDemo = () => {
+    if (currentStep < steps.length - 1) {
+      setCurrentStep(prevStep => prevStep + 1);
+    } else if (currentStep === steps.length - 1 && !showStructure) {
+      setShowStructure(true);
+    } else if (showStructure && !showMethodology) {
+      setShowMethodology(true);
+    } else if (showMethodology && !showExports) {
+      setShowExports(true);
+    }
+  };
+  
+  const toggleDemo = () => {
+    if (isDemoRunning) {
+      setCurrentStep(0);
+      setShowStructure(false);
+      setShowMethodology(false);
+      setShowExports(false);
+      setIsDemoRunning(false);
+    } else {
+      setIsDemoRunning(true);
+      advanceDemo();
+    }
+  };
+  
+  const handleIntegration = (integrationName: string) => {
+    toast.success(`Connecting to ${integrationName}...`);
+    setTimeout(() => {
+      toast.success(`Successfully integrated with ${integrationName}!`);
+    }, 1500);
+  };
+  
+  const handleExport = (formatName: string) => {
+    toast.success(`Preparing ${formatName} export...`);
+    setTimeout(() => {
+      toast.success(`${formatName} export completed!`);
+    }, 1000);
+  };
   
   return (
     <div className="w-full max-w-6xl mx-auto">
@@ -348,6 +417,8 @@ const ProjectShowcase = () => {
                     setCurrentStep(0);
                     setShowStructure(false);
                     setShowMethodology(false);
+                    setShowExports(false);
+                    setIsDemoRunning(false);
                   }}
                 >
                   <h3 className="text-xl font-bold mb-2">{project.name}</h3>
@@ -375,6 +446,8 @@ const ProjectShowcase = () => {
                       setCurrentStep(0);
                       setShowStructure(false);
                       setShowMethodology(false);
+                      setShowExports(false);
+                      setIsDemoRunning(false);
                     }}
                     className="w-full"
                   >
@@ -390,6 +463,31 @@ const ProjectShowcase = () => {
         
         {project && (
           <>
+            <div className="flex justify-center mb-8">
+              <Button 
+                size="lg" 
+                className="focus-ring flex items-center gap-2"
+                onClick={toggleDemo}
+              >
+                {isDemoRunning ? (
+                  <>Reset Demo</>
+                ) : (
+                  <><Play className="h-4 w-4" /> Start Demo</>
+                )}
+              </Button>
+              
+              {isDemoRunning && currentStep < steps.length && (
+                <Button 
+                  variant="outline" 
+                  size="lg" 
+                  className="ml-3 focus-ring"
+                  onClick={advanceDemo}
+                >
+                  Next Step
+                </Button>
+              )}
+            </div>
+            
             <div className="mb-10">
               <div className="relative">
                 <div className="absolute top-0 left-0 w-full h-full">
@@ -414,7 +512,7 @@ const ProjectShowcase = () => {
                       }}
                       transition={{ 
                         duration: 0.5, 
-                        delay: index <= currentStep ? step.delay / 3000 : 0 
+                        delay: isDemoRunning && index <= currentStep ? step.delay / 3000 : 0 
                       }}
                       className="flex flex-col items-center px-4"
                     >
@@ -443,11 +541,10 @@ const ProjectShowcase = () => {
               </div>
             </div>
             
-            {/* Project Details Section */}
             <div className="grid md:grid-cols-2 gap-8 mb-8">
               <motion.div 
                 initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
+                animate={{ opacity: currentStep >= 0 ? 1 : 0, x: 0 }}
                 transition={{ duration: 0.5 }}
                 className="bg-white rounded-xl shadow-sm p-6 border border-gray-100"
               >
@@ -474,7 +571,7 @@ const ProjectShowcase = () => {
               
               <motion.div 
                 initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
+                animate={{ opacity: currentStep >= 1 ? 1 : 0, x: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
                 className="bg-white rounded-xl shadow-sm p-6 border border-gray-100"
               >
@@ -493,7 +590,6 @@ const ProjectShowcase = () => {
               </motion.div>
             </div>
             
-            {/* Project Structure */}
             {showStructure && (
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
@@ -539,7 +635,6 @@ const ProjectShowcase = () => {
               </motion.div>
             )}
             
-            {/* Methodology Recommendations */}
             {showMethodology && (
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
@@ -609,6 +704,64 @@ const ProjectShowcase = () => {
                       </div>
                     </div>
                   ))}
+                </div>
+              </motion.div>
+            )}
+            
+            {showExports && (
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                className="mb-8"
+              >
+                <div className="bg-gradient-to-r from-primary/5 to-primary/10 rounded-xl p-6 mb-6">
+                  <h3 className="text-xl font-semibold mb-4">Export & Integration Options</h3>
+                  <p className="text-gray-600 mb-4">
+                    Take your project plan to the next level by exporting or integrating with your favorite tools:
+                  </p>
+                </div>
+                
+                <div className="mb-8">
+                  <h4 className="text-lg font-semibold mb-4">Export Formats</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {exportFormats.map((format) => (
+                      <div 
+                        key={format.name} 
+                        className="bg-white rounded-lg border border-gray-200 p-4 flex flex-col items-center hover:shadow-md transition-shadow cursor-pointer"
+                        onClick={() => handleExport(format.name)}
+                      >
+                        <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center mb-3">
+                          {format.icon}
+                        </div>
+                        <h5 className="font-medium">{format.name}</h5>
+                        <p className="text-sm text-gray-500 text-center mt-1">{format.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 className="text-lg font-semibold mb-4">Integrations</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {integrations.map((integration) => (
+                      <div 
+                        key={integration.name} 
+                        className="bg-white rounded-lg border border-gray-200 p-5 flex flex-col items-center hover:shadow-md transition-shadow cursor-pointer"
+                        onClick={() => handleIntegration(integration.name)}
+                      >
+                        <div className="w-16 h-16 mb-4 flex items-center justify-center">
+                          <img 
+                            src={integration.logo} 
+                            alt={`${integration.name} logo`} 
+                            className="max-w-full max-h-full object-contain"
+                          />
+                        </div>
+                        <h5 className="font-medium text-center">{integration.name}</h5>
+                        <p className="text-sm text-gray-500 text-center mt-1">{integration.description}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </motion.div>
             )}
