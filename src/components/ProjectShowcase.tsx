@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+
+import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { 
   ArrowRight, 
@@ -8,7 +9,8 @@ import {
   Clock, 
   Download, 
   FileDown, 
-  Play 
+  Play, 
+  XCircle 
 } from 'lucide-react';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { 
@@ -290,7 +292,7 @@ const integrations = [
   },
   {
     name: "Zymmr",
-    logo: "https://zymmr.vercel.app/favicon.ico", 
+    logo: "https://zymmr.vercel.app/logo.png", 
     description: "Seamlessly integrate with Zymmr for enhanced project management."
   },
   {
@@ -320,7 +322,7 @@ type AnimatedStep = {
   title: string;
   description: string;
   icon: React.ReactNode;
-  delay: number;
+  sectionRef: React.RefObject<HTMLDivElement>;
 };
 
 const ProjectShowcase = () => {
@@ -330,6 +332,15 @@ const ProjectShowcase = () => {
   const [showMethodology, setShowMethodology] = useState(false);
   const [showExports, setShowExports] = useState(false);
   const [isDemoRunning, setIsDemoRunning] = useState(false);
+  const [isStepperFixed, setIsStepperFixed] = useState(false);
+  
+  // Refs for scrolling to sections
+  const projectDetailsRef = useRef<HTMLDivElement>(null);
+  const teamCompositionRef = useRef<HTMLDivElement>(null);
+  const projectStructureRef = useRef<HTMLDivElement>(null);
+  const methodologiesRef = useRef<HTMLDivElement>(null);
+  const exportsRef = useRef<HTMLDivElement>(null);
+  const stepperRef = useRef<HTMLDivElement>(null);
   
   const project = demoProjects.find(p => p.name === selectedProject);
   const structure = demoStructures[selectedProject];
@@ -340,39 +351,97 @@ const ProjectShowcase = () => {
       title: "Gather Project Details", 
       description: "Collect key information about your project's scope and objectives",
       icon: <Brain className="h-6 w-6 text-primary" />,
-      delay: 0
+      sectionRef: projectDetailsRef
     },
     { 
       title: "Define Team Composition", 
       description: "Specify roles, experience levels, and availability of team members",
       icon: <Clock className="h-6 w-6 text-primary" />,
-      delay: 500
+      sectionRef: teamCompositionRef
     },
     { 
       title: "Generate Project Structure", 
       description: "AI creates epics, stories, tasks with story points",
       icon: <ArrowRight className="h-6 w-6 text-primary" />,
-      delay: 1000
+      sectionRef: projectStructureRef
     },
     { 
       title: "Recommend Methodologies", 
       description: "Get personalized workflow recommendations based on your project",
       icon: <CheckCircle2 className="h-6 w-6 text-primary" />,
-      delay: 1500
+      sectionRef: methodologiesRef
     }
   ];
   
-  const advanceDemo = () => {
+  // Auto-advance demo with timing
+  useEffect(() => {
+    if (!isDemoRunning) return;
+    
+    let timer: number;
+    
     if (currentStep < steps.length - 1) {
-      setCurrentStep(prevStep => prevStep + 1);
+      timer = window.setTimeout(() => {
+        setCurrentStep(prevStep => prevStep + 1);
+      }, 2000);
     } else if (currentStep === steps.length - 1 && !showStructure) {
-      setShowStructure(true);
+      timer = window.setTimeout(() => {
+        setShowStructure(true);
+      }, 1500);
     } else if (showStructure && !showMethodology) {
-      setShowMethodology(true);
+      timer = window.setTimeout(() => {
+        setShowMethodology(true);
+      }, 1500);
     } else if (showMethodology && !showExports) {
-      setShowExports(true);
+      timer = window.setTimeout(() => {
+        setShowExports(true);
+      }, 1500);
     }
-  };
+    
+    return () => window.clearTimeout(timer);
+  }, [isDemoRunning, currentStep, showStructure, showMethodology, showExports]);
+  
+  // Scroll to current section when step changes
+  useEffect(() => {
+    if (!isDemoRunning) return;
+    
+    if (currentStep < steps.length) {
+      const currentRef = steps[currentStep].sectionRef;
+      if (currentRef && currentRef.current) {
+        currentRef.current.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start' 
+        });
+      }
+    } else if (showStructure && !showMethodology) {
+      projectStructureRef.current?.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'start' 
+      });
+    } else if (showMethodology && !showExports) {
+      methodologiesRef.current?.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'start' 
+      });
+    } else if (showExports) {
+      exportsRef.current?.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'start' 
+      });
+    }
+  }, [currentStep, showStructure, showMethodology, showExports, isDemoRunning]);
+  
+  // Handle stepper fixed position on scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      if (stepperRef.current) {
+        const stepperPosition = stepperRef.current.getBoundingClientRect().top;
+        setIsStepperFixed(stepperPosition <= 0);
+      }
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
   
   const toggleDemo = () => {
     if (isDemoRunning) {
@@ -381,9 +450,12 @@ const ProjectShowcase = () => {
       setShowMethodology(false);
       setShowExports(false);
       setIsDemoRunning(false);
+      
+      // Scroll back to top
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
       setIsDemoRunning(true);
-      advanceDemo();
+      // Demo will auto-advance through useEffect
     }
   };
   
@@ -438,21 +510,6 @@ const ProjectShowcase = () => {
                       <p className="font-bold">{project.objectives.length}</p>
                     </div>
                   </div>
-                  
-                  <Button 
-                    variant="outline" 
-                    onClick={() => {
-                      setSelectedProject(project.name);
-                      setCurrentStep(0);
-                      setShowStructure(false);
-                      setShowMethodology(false);
-                      setShowExports(false);
-                      setIsDemoRunning(false);
-                    }}
-                    className="w-full"
-                  >
-                    View Demo
-                  </Button>
                 </div>
               </CarouselItem>
             ))}
@@ -470,25 +527,19 @@ const ProjectShowcase = () => {
                 onClick={toggleDemo}
               >
                 {isDemoRunning ? (
-                  <>Reset Demo</>
+                  <><XCircle className="h-4 w-4" /> Stop Demo</>
                 ) : (
                   <><Play className="h-4 w-4" /> Start Demo</>
                 )}
               </Button>
-              
-              {isDemoRunning && currentStep < steps.length && (
-                <Button 
-                  variant="outline" 
-                  size="lg" 
-                  className="ml-3 focus-ring"
-                  onClick={advanceDemo}
-                >
-                  Next Step
-                </Button>
-              )}
             </div>
             
-            <div className="mb-10">
+            <div 
+              ref={stepperRef}
+              className={`mb-10 relative z-20 bg-white/95 py-4 ${
+                isStepperFixed ? 'sticky top-0 shadow-md' : ''
+              }`}
+            >
               <div className="relative">
                 <div className="absolute top-0 left-0 w-full h-full">
                   <div className="h-1 bg-gray-200 relative top-7 z-0 mx-8">
@@ -512,7 +563,7 @@ const ProjectShowcase = () => {
                       }}
                       transition={{ 
                         duration: 0.5, 
-                        delay: isDemoRunning && index <= currentStep ? step.delay / 3000 : 0 
+                        delay: isDemoRunning && index === currentStep ? 0.2 : 0 
                       }}
                       className="flex flex-col items-center px-4"
                     >
@@ -543,6 +594,7 @@ const ProjectShowcase = () => {
             
             <div className="grid md:grid-cols-2 gap-8 mb-8">
               <motion.div 
+                ref={projectDetailsRef}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: currentStep >= 0 ? 1 : 0, x: 0 }}
                 transition={{ duration: 0.5 }}
@@ -570,6 +622,7 @@ const ProjectShowcase = () => {
               </motion.div>
               
               <motion.div 
+                ref={teamCompositionRef}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: currentStep >= 1 ? 1 : 0, x: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
@@ -590,12 +643,13 @@ const ProjectShowcase = () => {
               </motion.div>
             </div>
             
-            {showStructure && (
+            {(showStructure || isDemoRunning && currentStep >= 2) && (
               <motion.div 
+                ref={projectStructureRef}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
-                className="mb-8"
+                className="mb-8 scroll-mt-24"
               >
                 <div className="bg-gradient-to-r from-primary/5 to-primary/10 rounded-xl p-6 mb-6">
                   <h3 className="text-xl font-semibold mb-4">AI-Generated Project Structure</h3>
@@ -635,12 +689,13 @@ const ProjectShowcase = () => {
               </motion.div>
             )}
             
-            {showMethodology && (
+            {(showMethodology || isDemoRunning && currentStep >= 3) && (
               <motion.div 
+                ref={methodologiesRef}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
-                className="mb-8"
+                className="mb-8 scroll-mt-24"
               >
                 <div className="bg-gradient-to-r from-primary/5 to-primary/10 rounded-xl p-6 mb-6">
                   <h3 className="text-xl font-semibold mb-4">AI-Recommended Methodologies</h3>
@@ -708,12 +763,13 @@ const ProjectShowcase = () => {
               </motion.div>
             )}
             
-            {showExports && (
+            {(showExports || isDemoRunning && currentStep >= 3 && showMethodology) && (
               <motion.div 
+                ref={exportsRef}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
-                className="mb-8"
+                className="mb-8 scroll-mt-24"
               >
                 <div className="bg-gradient-to-r from-primary/5 to-primary/10 rounded-xl p-6 mb-6">
                   <h3 className="text-xl font-semibold mb-4">Export & Integration Options</h3>
