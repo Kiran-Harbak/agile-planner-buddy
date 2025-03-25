@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { motion, useAnimation, Variants } from 'framer-motion';
 
@@ -61,6 +60,42 @@ export const staggerContainer: Variants = {
     transition: {
       staggerChildren: 0.1,
       delayChildren: 0.3,
+    }
+  }
+};
+
+// Additional animation variants
+export const fadeInStaggered: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      when: "beforeChildren",
+      staggerChildren: 0.2,
+    },
+  },
+};
+
+export const pulseAnimation: Variants = {
+  initial: { scale: 1 },
+  pulse: {
+    scale: [1, 1.05, 1],
+    transition: {
+      duration: 1.5,
+      repeat: Infinity,
+      repeatType: "reverse"
+    }
+  }
+};
+
+export const floatAnimation: Variants = {
+  initial: { y: 0 },
+  float: {
+    y: [0, -10, 0],
+    transition: {
+      duration: 3,
+      repeat: Infinity,
+      repeatType: "reverse"
     }
   }
 };
@@ -154,4 +189,17 @@ export function useIntersectionAnimation({
     ref: setRef, 
     className: isVisible ? animationClass : 'opacity-0'
   };
+}
+
+// New hooks for Framer Motion
+export function useAnimationControls() {
+  const controls = useAnimation();
+  
+  const startAnimation = (animationName: string, delay = 0) => {
+    setTimeout(() => {
+      controls.start(animationName);
+    }, delay);
+  };
+  
+  return { controls, startAnimation };
 }

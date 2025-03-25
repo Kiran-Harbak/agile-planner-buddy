@@ -1,13 +1,14 @@
-
 import { Link } from 'react-router-dom';
 import { ArrowRight, CheckCircle2, FileText, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSlideUp } from '@/lib/animations';
+import ProjectShowcase from '@/components/ProjectShowcase';
 
 const Index = () => {
   const heroAnimation = useSlideUp({ delay: 100 });
   const featuresAnimation = useSlideUp({ delay: 300 });
   const ctaAnimation = useSlideUp({ delay: 500 });
+  const showcaseAnimation = useSlideUp({ delay: 700 });
   
   return (
     <div className="min-h-screen">
@@ -89,8 +90,22 @@ const Index = () => {
         </div>
       </section>
       
+      {/* Demo Showcase Section */}
+      <section className="py-16 px-4 bg-gray-50">
+        <div className="container mx-auto">
+          <div {...showcaseAnimation} className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">See Project Planner in Action</h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Explore how our AI helps organize projects with just a few details from you
+            </p>
+          </div>
+          
+          <ProjectShowcase />
+        </div>
+      </section>
+      
       {/* Features Section */}
-      <section className="py-20 px-4 bg-gray-50">
+      <section className="py-20 px-4 bg-white">
         <div className="container mx-auto max-w-6xl">
           <div {...featuresAnimation} className="text-center mb-16">
             <h2 className="text-3xl font-bold mb-4">How It Works</h2>
